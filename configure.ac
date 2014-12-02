@@ -1,6 +1,6 @@
 AC_PREREQ(2.64)
 AC_COPYRIGHT([Copyright (c) 2014 Phil Stanhope])
-AC_INIT([vmod_static], [trunk])
+AC_INIT([vmod-static], [trunk])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/vmod_static.vcc)
 AM_CONFIG_HEADER(config.h)
