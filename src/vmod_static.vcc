@@ -1,0 +1,29 @@
+$Module static
+
+This is the embedded documentation for the static file server VMOD.
+
+Derived from previous examples:
+
+* https://github.com/varnish/libvmod-example/
+
+AND
+
+* https://github.com/Dridi/libvmod-fsdirector
+
+
+file_system object. Will use the values configured for the specified BACKEND, spin up
+a socket listener on the configured port, and serve files specified from the file system
+location STRING.
+
+$Object file_system(BACKEND, STRING)
+
+Module one-time init function.
+$Init init_function
+
+Simple hello function. Shows how to malloc memory for a string and return to vcl.
+$Function STRING hello(STRING)
+
+
+When running debug in foreground, echo the test string.
+$Function VOID print(STRING)
+

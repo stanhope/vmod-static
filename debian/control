@@ -1,0 +1,17 @@
+Source: vmod_static
+Section: web
+Priority: extra
+Maintainer: @componetry <componentry@gmail.com>
+Build-Depends: debhelper (>= 7),
+ build-essential,
+ pkg-config,
+ python-docutils,
+ varnish (>= 4.0.2),
+ libvarnishapi-dev (>= 4.0.2)
+Standards-Version: 3.8.1
+Vcs-Git: git://github.com/stanhope/vmod_static.git
+
+Package: vmod_static
+Architecture: any
+Depends: varnish (>= 4.0.2), ${misc:Depends}
+Description: custom static file backend for Varnish 4.x
