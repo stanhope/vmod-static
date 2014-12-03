@@ -1,9 +1,9 @@
 Source: vmod-static
-Section: unknown
+Section: web
 Priority: optional
 Maintainer: Componentry <componentry@gmail.com>
 Build-Depends: debhelper (>= 9), autotools-dev
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 Homepage: https://github.com/stanhope/vmod-static
 #Vcs-Git: git://git.debian.org/collab-maint/vmod-static.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/vmod-static.git;a=summary
@@ -12,4 +12,5 @@ Package: vmod-static
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},mime-support,libvarnishapi-dev,libmagic-dev:amd64,libfakeroot:amd64,libsigsegv2:amd64,gawk,file,libmagic1:amd64
 Description: this is the description
+ This is the long description
 
