@@ -1,5 +1,5 @@
-vmod_static (0.1) unstable; urgency=low
+vmod-static (0.1) unstable; urgency=low
 
-  * First version
+  * Initial release
 
- -- Phil Stanhope <phil@dyn.com>  Wed, 01 Dec 2014 15:03:00 -0400
+ -- Componentry <componetry@gmail.com>  Mon, 01 Dec 2014 15:03:00 -0400

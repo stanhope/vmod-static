@@ -1,4 +1,4 @@
-vmod_static
+vmod-static
 ===========
 
 static file serving backend (Varnish V4.0.2 or greater only)
@@ -89,10 +89,10 @@ Building VMOD from Source
 
 ```
 sudo apt-get install automake libtool pkg-config libpcre3-dev python-docutils ncurses-dev libedit-dev make
-git clone https://github.com/stanhope/vmod_static.git
-cd vmod_static
-./autogen.sh
-./configure
+git clone https://github.com/stanhope/vmod-static.git
+cd vmod-static
+autogen.sh
+configure
 make
 sudo make install
 ```

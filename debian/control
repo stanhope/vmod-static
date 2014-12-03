@@ -1,17 +1,15 @@
-Source: vmod_static
-Section: web
-Priority: extra
-Maintainer: @componetry <componentry@gmail.com>
-Build-Depends: debhelper (>= 7),
- build-essential,
- pkg-config,
- python-docutils,
- varnish (>= 4.0.2),
- libvarnishapi-dev (>= 4.0.2)
-Standards-Version: 3.8.1
-Vcs-Git: git://github.com/stanhope/vmod_static.git
+Source: vmod-static
+Section: unknown
+Priority: optional
+Maintainer: Componentry <componentry@gmail.com>
+Build-Depends: debhelper (>= 9), autotools-dev
+Standards-Version: 3.9.4
+Homepage: https://github.com/stanhope/vmod-static
+#Vcs-Git: git://git.debian.org/collab-maint/vmod-static.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/vmod-static.git;a=summary
 
-Package: vmod_static
+Package: vmod-static
 Architecture: any
-Depends: varnish (>= 4.0.2), ${misc:Depends}
-Description: custom static file backend for Varnish 4.x
+Depends: ${shlibs:Depends}, ${misc:Depends},mime-support,libvarnishapi-dev,libmagic-dev:amd64,libfakeroot:amd64,libsigsegv2:amd64,gawk,file,libmagic1:amd64
+Description: this is the description
+
