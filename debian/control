@@ -10,7 +10,7 @@ Homepage: https://github.com/stanhope/vmod-static
 
 Package: vmod-static
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends},mime-support,libvarnishapi-dev,libmagic-dev:amd64,gawk,file
+Depends: ${shlibs:Depends}, ${misc:Depends},mime-support,gawk,file
 Description: this is the description
  This is the long description
 
