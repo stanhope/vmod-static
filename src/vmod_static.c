@@ -155,15 +155,27 @@ add_content_type(struct vmod_static_file_system *fs, const char *path)
     // For example, create simple db based on this => http://www.stdicon.com/mimetypes
     const char *mime = NULL;
     const char *xicon = "image/x-icon";
-    const char *html = "text/html";
+    const char *html = "text/html; charset=utf-8";
     const char *plain = "text/plain";
     const char *js = "application/x-javascript";
-    if (strcmp(path, "/js/") >= 1) mime = js;
-    else if (strcmp(path, "/favicon.ico") == 0) mime = xicon;
-    else if (strstr(path, ".html") != 0) mime = html;
-    else if (strstr(path, ".js") != 0) mime = js;
-    else if (strstr(path, ".png") != 0) mime = "image/png";
-    else if (strstr(path, ".gif") != 0) mime = "image/gif";
+    if (strstr(path, "/js/") != 0) {
+	mime = js;
+    }
+    else if (strstr(path, "/favicon.ico") != 0) {
+	mime = xicon;
+    }
+    else if (strstr(path, ".html") != 0) {
+	mime = html;
+    }
+    else if (strstr(path, ".js") != 0) {
+	mime = js;
+    }
+    else if (strstr(path, ".png") != 0) {
+	mime = "image/png";
+    }
+    else if (strstr(path, ".gif") != 0) {
+	mime = "image/gif";
+    }
     if (mime == NULL) mime = "text/plain; charset=us-ascii";
     
     // printf("  static.add_content_type %s => %s\n", path, mime);
