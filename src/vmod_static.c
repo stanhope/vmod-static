@@ -237,21 +237,16 @@ add_content_type(struct vmod_static_file_system *fs, const char *path)
     char* mime_default = "application/octet-stream";
     char* val = NULL;
     if (mime == NULL) {
-	char tmp[1024];
-	strncpy(tmp, path, 1024);
-	char* saveptr;
-	char* fname = strtok_r((char*)tmp, ".", &saveptr);
-	char* ext = strtok_r(NULL, ".", &saveptr);
-	uint8_t key[32];
-	sprintf((char*)key, ".%s", ext);
-	PWord_t PV;
-	JSLG(PV, MIMETYPE_CACHE, key);
-	if (PV != NULL) {
-	    mime = (char*)*PV;
-	} else {
-	    mime = mime_default;
+	char* key = strrchr(path,'.');
+	if (key != NULL) {
+	    PWord_t PV;
+	    JSLG(PV, MIMETYPE_CACHE, key);
+	    if (PV != NULL) {
+		mime = (char*)*PV;
+	    }
 	}
     }
+    if (mime == NULL) mime = mime_default;
     // printf("  static.add_content_type %s => %s\n", path, mime);
     if (fs != NULL) dprintf(fs->htc.fd, "Content-Type: %s\r\n", mime);
 }
