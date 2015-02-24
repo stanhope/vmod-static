@@ -3,7 +3,7 @@ AM_CPPFLAGS = @VMOD_INCLUDES@
 vmoddir = @VMOD_DIR@
 vmod_LTLIBRARIES = libvmod_static.la
 
-libvmod_static_la_LDFLAGS = -module -export-dynamic -avoid-version -shared -lmagic
+libvmod_static_la_LDFLAGS = -module -export-dynamic -avoid-version -shared -lmagic -lJudy
 
 libvmod_static_la_SOURCES = \
 	vcc_if.c \

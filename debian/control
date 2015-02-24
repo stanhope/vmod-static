@@ -11,6 +11,6 @@ Homepage: https://github.com/stanhope/vmod-static
 Package: vmod-static
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},mime-support,gawk,file
-Description: this is the description
- This is the long description
+Description: Simple in process backend vmod
+ Simple in-process backend vmod
 

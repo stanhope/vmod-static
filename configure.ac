@@ -32,6 +32,7 @@ AM_CONDITIONAL(HAVE_RST2MAN, [test "x$RST2MAN" != "xno"])
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([sys/stdlib.h])
+AC_CHECK_HEADERS([Judy.h])
 
 PKG_CHECK_MODULES([libvarnishapi], [varnishapi])
 

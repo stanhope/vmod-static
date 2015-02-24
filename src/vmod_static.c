@@ -17,6 +17,64 @@
 
 #include "vcc_if.h"
 
+#include <Judy.h>
+#include "cJSON.c"
+
+#define DB_MIMETYPE "/etc/vmod-static/mimetypes.json"
+Pvoid_t MIMETYPE_CACHE = (Pvoid_t) NULL;
+
+static void init_mimetypes() {
+
+    // Create simple db based on this => http://www.stdicon.com/mimetypes
+    Word_t Bytes;
+    JSLFA(Bytes, MIMETYPE_CACHE);
+
+    int error = 0;
+    FILE* file = fopen(DB_MIMETYPE, "r");
+    if (file != NULL) {
+	fseek(file, 0L, SEEK_END);
+	uint sz = ftell(file);
+	fseek(file, 0L, SEEK_SET);
+	char* buf = malloc(sz+1);
+	buf[sz] = 0;
+	size_t sz_read = fread(buf, 1, sz, file);
+	if (sz_read != sz) {
+	    error++;
+	    printf("WARN: mimetype db read failure\n");
+	}
+	cJSON *items = cJSON_Parse(buf);
+	if (items != NULL) {
+	    uint i;
+	    uint item_len = cJSON_GetArraySize(items);
+	    for (i=0; i < item_len; i++) {
+		cJSON *item = cJSON_GetArrayItem(items, i);
+		if (item->child != NULL) {
+		    cJSON *child = item->child;
+		    char* key = child->string;
+		    char* val = child->valuestring;
+		    if (key != NULL && val != NULL) {
+			PWord_t PV;
+			JSLI(PV, MIMETYPE_CACHE, key);
+			*PV = (long)val;
+		    }
+		}
+	    }
+	} else {
+	    error++;
+	    printf("ERROR: Invalid mimetypes db: %s\n", DB_MIMETYPE);
+	}
+	free(buf);
+	fclose(file);
+    } else {
+	fprintf(stderr, "WARN: Unable to find mimetypes: %s", DB_MIMETYPE);
+    }
+    // Clear cache if any error whatsoever
+    if (error > 0) {
+	Word_t Bytes;
+	JSLFA(Bytes, MIMETYPE_CACHE);
+    }
+}
+
 /* lightweight addrinfo */
 struct vss_addr {
     int			 va_family;
@@ -150,9 +208,8 @@ handle_file_error(struct http_conn *htc, int err) {
 static void
 add_content_type(struct vmod_static_file_system *fs, const char *path)
 {
-    // No libmagic or anything really at all. Some hard-coded defaults.
-    // TODO: Create loadable JudyArray for quick lookups based on a @loadtime mime type list 
-    // For example, create simple db based on this => http://www.stdicon.com/mimetypes
+    // No libmagic or anything really at all. Some hard-coded defaults and a dynamic library
+
     const char *mime = NULL;
     const char *xicon = "image/x-icon";
     const char *html = "text/html; charset=utf-8";
@@ -176,8 +233,25 @@ add_content_type(struct vmod_static_file_system *fs, const char *path)
     else if (strstr(path, ".gif") != 0) {
 	mime = "image/gif";
     }
-    if (mime == NULL) mime = "text/plain; charset=us-ascii";
-    
+
+    char* mime_default = "application/octet-stream";
+    char* val = NULL;
+    if (mime == NULL) {
+	char tmp[1024];
+	strncpy(tmp, path, 1024);
+	char* saveptr;
+	char* fname = strtok_r((char*)tmp, ".", &saveptr);
+	char* ext = strtok_r(NULL, ".", &saveptr);
+	uint8_t key[32];
+	sprintf((char*)key, ".%s", ext);
+	PWord_t PV;
+	JSLG(PV, MIMETYPE_CACHE, key);
+	if (PV != NULL) {
+	    mime = (char*)*PV;
+	} else {
+	    mime = mime_default;
+	}
+    }
     // printf("  static.add_content_type %s => %s\n", path, mime);
     if (fs != NULL) dprintf(fs->htc.fd, "Content-Type: %s\r\n", mime);
 }
@@ -345,6 +419,8 @@ vmod_file_system__init(const struct vrt_ctx *ctx,
     fflush(stderr);
     struct vmod_static_file_system *fs;
     struct vdi_simple *vs;
+
+    init_mimetypes();
 
     AN(ctx);
     AN(fsp);
