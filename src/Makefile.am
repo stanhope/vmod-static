@@ -14,6 +14,9 @@ vcc_if.c vcc_if.h: @VMODTOOL@ $(top_srcdir)/src/vmod_static.vcc
 	@VMODTOOL@ $(top_srcdir)/src/vmod_static.vcc
 
 EXTRA_DIST = \
-	vmod_static.vcc
+	vmod_static.vcc \
+	cJSON.h \
+	cJSON.c \
+	etc/vmod-static/mimetypes.json
 
 CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h
