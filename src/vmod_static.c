@@ -208,47 +208,21 @@ handle_file_error(struct http_conn *htc, int err) {
 static void
 add_content_type(struct vmod_static_file_system *fs, const char *path)
 {
-    // No libmagic or anything really at all. Some hard-coded defaults and a dynamic library
-
-    const char *mime = NULL;
-    const char *xicon = "image/x-icon";
-    const char *html = "text/html; charset=utf-8";
-    const char *plain = "text/plain";
-    const char *js = "application/x-javascript";
-    if (strstr(path, "/js/") != 0) {
-	mime = js;
-    }
-    else if (strstr(path, "/favicon.ico") != 0) {
-	mime = xicon;
-    }
-    else if (strstr(path, ".html") != 0) {
-	mime = html;
-    }
-    else if (strstr(path, ".js") != 0) {
-	mime = js;
-    }
-    else if (strstr(path, ".png") != 0) {
-	mime = "image/png";
-    }
-    else if (strstr(path, ".gif") != 0) {
-	mime = "image/gif";
-    }
-
-    char* mime_default = "application/octet-stream";
-    char* val = NULL;
-    if (mime == NULL) {
+    if (fs != NULL) {
+	// No libmagic. Done by determining apparent file extension and using that as key
+	char* mimetype = NULL;
 	char* key = strrchr(path,'.');
 	if (key != NULL) {
 	    PWord_t PV;
 	    JSLG(PV, MIMETYPE_CACHE, key);
 	    if (PV != NULL) {
-		mime = (char*)*PV;
+		mimetype = (char*)*PV;
 	    }
 	}
+	if (mimetype==NULL) mimetype = "application/octet-stream";
+	// printf("  static.add_content_type %s => %s\n", path, mimetime);
+	dprintf(fs->htc.fd, "Content-Type: %s\r\n", mimetype);
     }
-    if (mime == NULL) mime = mime_default;
-    // printf("  static.add_content_type %s => %s\n", path, mime);
-    if (fs != NULL) dprintf(fs->htc.fd, "Content-Type: %s\r\n", mime);
 }
 
 static void
