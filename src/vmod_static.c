@@ -119,12 +119,191 @@ vmod_hello(const struct vrt_ctx *ctx, VCL_STRING name)
     return (p);
 }
 
+#if !defined(VRT_MINOR_VERSION) || !defined(VRT_MAJOR_VERSION) || \
+    (VRT_MAJOR_VERSION < 2 || VRT_MINOR_VERSION < 2)
+static struct http *
+VRT_selecthttp(const struct vrt_ctx *ctx, enum gethdr_e where)
+{
+    struct http *hp;
+    switch (where) {
+    case HDR_REQ:
+	hp = ctx->http_req;
+	break;
+    case HDR_BEREQ:
+	hp = ctx->http_bereq;
+	break;
+    case HDR_BERESP:
+	hp = ctx->http_beresp;
+	break;
+    case HDR_RESP:
+	hp = ctx->http_resp;
+	break;
+#if !defined(VRT_MAJOR_VERSION) || (VRT_MAJOR_VERSION < 2)
+    case HDR_OBJ:
+	hp = ctx->http_obj;
+	break;
+#endif
+    default:
+	WRONG("VRT_selecthttp 'where' invalid");
+    }
+    return (hp);
+}
+#endif
+
+/*
+ * Returns true if the *hdr header is the one pointed to by *hh.
+ *
+ * FIXME: duplication from varnishd.
+ */
+static int
+header_http_IsHdr(const txt *hh, const char *hdr)
+{
+    unsigned l;
+
+    Tcheck(*hh);
+    AN(hdr);
+    l = hdr[0];
+    assert(l == strlen(hdr + 1));
+    assert(hdr[l] == ':');
+    hdr++;
+    int result = !strncasecmp(hdr, hh->b, l);
+    // printf("header_http_IsHdr hdr=%s hh->b=%s len=%u => %u\n", hdr, hh->b, l, result);
+    return result;
+}
+
+/*
+ * Return true if the hp->hd[u] header matches *hdr
+ */
+static int
+header_http_match(const struct vrt_ctx *ctx, const struct http *hp, unsigned u, const char *hdr)
+{
+    const char *start;
+    unsigned l;
+    assert(hdr);
+    assert(hp);
+    Tcheck(hp->hd[u]);
+    if (hp->hd[u].b == NULL)
+	return 0;
+    l = hdr[0];
+    if (!header_http_IsHdr(&hp->hd[u], hdr))
+	return 0;
+    return 1;
+}
+
+static void 
+header_http_append(const struct vrt_ctx *ctx, struct http *hp, VCL_HEADER hdr, const char *fmt, ...)
+{
+    va_list ap;
+    const char *b;
+    va_start(ap, fmt);
+    b = VRT_String(hp->ws, hdr->what + 1, fmt, ap);
+    if (b == NULL)
+	VSLb(ctx->vsl, SLT_LostHeader, "vmod_header: %s", hdr->what + 1);
+    else
+	http_SetHeader(hp, b);
+    va_end(ap);
+}
+
+static char *
+str_replace ( const char *string, const char *substr, const char *replacement, char* result ) {
+    // printf("str_replace %s sub=%s rep=%s\n", string, substr, replacement);
+    char *tok = NULL;
+    char *oldstr = NULL;
+    if ( substr == NULL || replacement == NULL ) return strdup (string);
+    char *newstr = strdup(string);
+    while ( (tok = strstr ( newstr, substr ))){
+	oldstr = newstr;
+	newstr = malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
+	/*failed to alloc mem, free old string and return NULL */
+	if ( newstr == NULL ){
+	    free (oldstr);
+	    return NULL;
+	}
+	memcpy ( newstr, oldstr, tok - oldstr );
+	memcpy ( newstr + (tok - oldstr), replacement, strlen ( replacement ) );
+	memcpy ( newstr + (tok - oldstr) + strlen( replacement ), tok + strlen ( substr ), strlen ( oldstr ) - strlen ( substr ) - ( tok - oldstr ) );
+	memset ( newstr + strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) , 0, 1 );
+	free (oldstr);
+    }
+    // Allow caller to provide final buffer and not have to cleanup. Could segfault etc if buffer not big enough. Caller responsibilty.
+    if (result != NULL) {
+	strcpy(result, newstr);
+	free(newstr);
+	return result;
+    }
+    return newstr;
+}
+
+static void
+header_http_cphdr(const struct vrt_ctx *ctx, struct http *hp, const char *hdr, VCL_HEADER dst, const char* substr, const char* replacement)
+{
+    if (hp == NULL) return;
+
+    if (dst == NULL) {
+    }
+
+    unsigned u;
+    const char *p = NULL;
+    for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+	if (!header_http_match(ctx, hp, u, hdr)) {
+	    continue;
+	}
+	p = hp->hd[u].b + hdr[0];
+	while (*p == ' ' || *p == '\t')
+	    p++;
+
+	if (substr != NULL) {
+	    char* new_cookie = str_replace(p, substr, replacement, NULL);
+	    header_http_append(ctx, hp, dst, new_cookie, vrt_magic_string_end);
+	    free(new_cookie);
+	} else {
+	    header_http_append(ctx, hp, dst, p, vrt_magic_string_end);
+	}
+    }
+}
+
+VCL_VOID  __match_proto__()
+    vmod_copy(const struct vrt_ctx *ctx, VCL_HEADER src, VCL_HEADER dst)
+{
+    CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+    struct http *hp = VRT_selecthttp(ctx, src->where);
+    if (hp == NULL) return;
+    header_http_cphdr(ctx, hp, src->what, dst, NULL, NULL);
+}
+
+VCL_VOID  __match_proto__()
+    vmod_copy_and_replace(const struct vrt_ctx *ctx, VCL_HEADER src, VCL_HEADER dst, VCL_STRING substr, VCL_STRING replacement)
+{
+    CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+    struct http *hp = VRT_selecthttp(ctx, src->where);
+    if (hp == NULL) return;
+    header_http_cphdr(ctx, hp, src->what, dst, substr, replacement);
+}
+
+VCL_VOID  __match_proto__()
+    vmod_replace(const struct vrt_ctx *ctx, VCL_HEADER src, VCL_STRING substr, VCL_STRING replacement)
+{
+    CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+    struct http *hp = VRT_selecthttp(ctx, src->where);
+    if (hp == NULL) return;
+    // 1 - Create temporary header.
+    struct gethdr_s temp_header = { src->where, "\011xxx-temp:"};
+    // 2 - Copy original header performing substr replacements (no REGEX!)
+    header_http_cphdr(ctx, hp, src->what, &temp_header, substr, replacement);
+    // 3 - Unset all copies of original header
+    VRT_SetHdr(ctx, src, vrt_magic_string_unset);
+    // 4 - Copy temp header(s) to original(s)
+    header_http_cphdr(ctx, hp, temp_header.what, src, NULL, NULL);
+    // 5 - Remove temporary header(s)
+    VRT_SetHdr(ctx, &temp_header, vrt_magic_string_unset);
+}
+
 struct vdi_simple {
-        unsigned                magic;
+    unsigned                magic;
 #define VDI_SIMPLE_MAGIC        0x476d25b7
-        struct director         dir;
-        struct backend          *backend;
-        const struct vrt_backend *vrt;
+    struct director         dir;
+    struct backend          *backend;
+    const struct vrt_backend *vrt;
 };
 
 /*--------------------------------------------------------------------*/
@@ -193,9 +372,10 @@ handle_file_error(struct http_conn *htc, int err) {
 	status = 400;
 	break;
     case ENOENT:
-    case ENOTDIR:
+    case ENOTDIR: {
 	status = 404;
 	break;
+    }
     default:
 	status = 500;
     }
@@ -228,7 +408,6 @@ add_content_type(struct vmod_static_file_system *fs, const char *path)
 static void
 send_response(struct vmod_static_file_system *fs, struct stat *stat_buf, const char *path)
 {
-    // printf("  static.send_response path=%s\n", path);
     int fd;
     off_t offset = 0;
     ssize_t remaining = stat_buf->st_size;
@@ -262,7 +441,7 @@ send_response(struct vmod_static_file_system *fs, struct stat *stat_buf, const c
 static void
 answer_file(struct vmod_static_file_system *fs, struct stat *stat_buf, const char *path)
 {
-    //printf("  static.answer_file %s\n", path);
+    printf("  static.answer_file %s\n", path);
     mode_t mode = stat_buf->st_mode;
 
     if (S_ISREG(mode)) {
@@ -304,6 +483,12 @@ answer_appropriate(struct vmod_static_file_system *fs)
     url_len = (url_end - url_start) + strlen(fs->root) + 1;
     url = WS_Alloc(fs->htc.ws, url_len);
     snprintf(url, url_len, "%s%s", fs->root, url_start);
+
+    if (strstr(url, "/..") != NULL) {
+	prepare_answer(&fs->htc, 400);
+	prepare_body(&fs->htc);
+	return;
+    }
 
     path = url;
     if (lstat(path, &stat_buf) < 0) {

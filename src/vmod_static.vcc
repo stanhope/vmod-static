@@ -23,7 +23,9 @@ $Init init_function
 Simple hello function. Shows how to malloc memory for a string and return to vcl.
 $Function STRING hello(STRING)
 
-
 When running debug in foreground, echo the test string.
 $Function VOID print(STRING)
 
+$Function VOID copy(HEADER,HEADER)
+$Function VOID copy_and_replace(HEADER,HEADER,STRING,STRING)
+$Function VOID replace(HEADER,STRING,STRING)
