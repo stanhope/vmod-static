@@ -441,7 +441,7 @@ send_response(struct vmod_static_file_system *fs, struct stat *stat_buf, const c
 static void
 answer_file(struct vmod_static_file_system *fs, struct stat *stat_buf, const char *path)
 {
-    printf("  static.answer_file %s\n", path);
+    // printf("  static.answer_file %s\n", path);
     mode_t mode = stat_buf->st_mode;
 
     if (S_ISREG(mode)) {
