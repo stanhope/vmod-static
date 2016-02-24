@@ -22,7 +22,6 @@ Dependencies
 ------------
 
 * Varnish 4.0.2 or greater
-* libmagic
 
 Ubuntu 14.04 Setup Steps
 ------------------------
@@ -38,7 +37,6 @@ echo "deb https://repo.varnish-cache.org/debian/ precise varnish-4.0" >> /etc/ap
 apt-get update
 apt-get install varnish
 apt-get install libvarnishapi-dev
-apt-get install libmagic-dev
 src/exit
 ```
 
